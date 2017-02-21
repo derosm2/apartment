@@ -6,7 +6,8 @@ apartment_namespace = namespace :apartment do
   task :create do
     tenants.each do |tenant|
       begin
-        quietly { Apartment::Tenant.create(tenant) }
+        puts("Creating #{tenant} tenant")
+        Apartment::Tenant.create(tenant)
       rescue Apartment::TenantExists => e
         puts e.message
       end

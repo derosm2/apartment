@@ -10,12 +10,12 @@ module Apartment
 
     ACCESSOR_METHODS = [
       :use_sql, :seed_after_create, :tenant_decorator,
-      :force_reconnect_on_switch, :pool_per_config
+      :force_reconnect_on_switch, :pool_per_config, :default_tenant
     ]
     WRITER_METHODS   = [
       :tenant_names, :database_schema_file, :excluded_models,
       :persistent_schemas, :connection_class, :tld_length, :db_migrate_tenants,
-      :seed_data_file, :default_tenant
+      :seed_data_file
     ]
     OTHER_METHODS    = [:tenant_resolver, :resolver_class]
 
@@ -57,10 +57,6 @@ module Apartment
     # Default to empty array
     def excluded_models
       @excluded_models || []
-    end
-
-    def default_tenant
-      @default_tenant || tenant_resolver.init_config
     end
 
     def persistent_schemas

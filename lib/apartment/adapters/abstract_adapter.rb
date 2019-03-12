@@ -42,6 +42,8 @@ module Apartment
             seed_data if Apartment.seed_after_create
 
             yield if block_given?
+          rescue *rescuable_exceptions => exception
+            raise_create_tenant_error!(tenant, exception)
           ensure
             switch!(previous_tenant) rescue reset
           end
@@ -176,6 +178,10 @@ module Apartment
 
       def raise_connect_error!(tenant, exception)
         raise TenantNotFound, "Error while connecting to tenant #{tenant}: #{exception.message}"
+      end
+
+      def raise_create_tenant_error!(tenant, exception)
+        raise TenantExists, "Error while creating tenant #{tenant}: #{ exception.message }"
       end
 
       def raise_drop_tenant_error!(tenant, exception)

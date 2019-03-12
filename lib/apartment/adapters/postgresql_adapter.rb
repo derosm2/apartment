@@ -39,7 +39,7 @@ module Apartment
         difference = config.select{ |k, v| current_config[k] != v }
 
         # PG doesn't have the ability to switch DB without reconnecting
-        if difference[:host] || difference[:database]
+        if difference[:host] || difference[:database] || difference[:port]
           connection_switch!(config)
         else
           simple_switch(config) if difference[:schema_search_path]
@@ -75,7 +75,8 @@ module Apartment
         if Apartment.pool_per_config
           "_apartment_#{config.hash}".to_sym
         else
-          host_hash = Digest::MD5.hexdigest(config[:host] || config[:url] || "127.0.0.1")
+          value = "#{config[:host]}:#{config[:port]}" || config[:url] || "127.0.0.1"
+          host_hash = Digest::MD5.hexdigest(value)
           "_apartment_#{host_hash}_#{config[:adapter]}_#{config[:database]}".to_sym
         end
       end

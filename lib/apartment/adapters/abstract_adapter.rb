@@ -30,8 +30,11 @@ module Apartment
             config = config_for(tenant)
             difference = current_difference_from(config)
 
-            if difference[:host]
-              connection_switch!(config, without_keys: [:database, :schema_search_path])
+            if difference[:host] || difference[:port]
+              default_db = "postgres"
+              temp_config = config.dup
+              temp_config[:database] = default_db
+              connection_switch!(temp_config)
             end
 
             create_tenant!(config)
@@ -56,8 +59,11 @@ module Apartment
         config = config_for(tenant)
         difference = current_difference_from(config)
 
-        if difference[:host]
-          connection_switch!(config, without_keys: [:database])
+        if difference[:host] || difference[:port]
+          default_db = "postgres"
+          temp_config = config.dup
+          temp_config[:database] = default_db
+          connection_switch!(temp_config)
         end
 
         unless database_exists?(config[:database])

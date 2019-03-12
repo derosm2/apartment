@@ -4,12 +4,9 @@ require 'digest'
 module Apartment
   module Adapters
     class PostgresqlAdapter < AbstractAdapter
-      # -- ABSTRACT OVERRIDES --
       def drop(tenant)
-        raise NotImplementedError,
-          "Please use either drop_database or drop_schema for PG adapter"
+        drop_database(tenant)
       end
-      # -- END ABSTRACT OVERRIDES --
 
       def drop_database(tenant)
         # Apartment.connection.select_all "select pg_terminate_backend(pg_stat_activity.pid) from pg_stat_activity where datname='#{tenant}' AND state='idle';"

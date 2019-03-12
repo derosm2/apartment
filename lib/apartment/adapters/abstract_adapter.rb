@@ -65,6 +65,8 @@ module Apartment
         Apartment.connection.drop_database(config[:database])
 
         @current = tenant
+      rescue *rescuable_exceptions => exception
+        raise_drop_tenant_error!(tenant, exception)
       ensure
         switch!(previous_tenant) rescue reset
       end
@@ -164,8 +166,20 @@ module Apartment
         end
       end
 
+      def rescuable_exceptions
+        [ActiveRecord::ActiveRecordError] + Array(rescue_from)
+      end
+
+      def rescue_from
+        []
+      end
+
       def raise_connect_error!(tenant, exception)
         raise TenantNotFound, "Error while connecting to tenant #{tenant}: #{exception.message}"
+      end
+
+      def raise_drop_tenant_error!(tenant, exception)
+        raise TenantNotFound, "Error while dropping tenant #{tenant}: #{ exception.message }"
       end
     end
   end

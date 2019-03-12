@@ -80,6 +80,10 @@ module Apartment
         end
       end
 
+      def rescue_from
+        PG::Error
+      end
+
       private
         def database_exists?(database)
           result = Apartment.connection.exec_query(<<-SQL).try(:first)

@@ -25,9 +25,7 @@ module Apartment
     #
     def adapter
       Thread.current[:apartment_adapter] ||= begin
-        config = Apartment.default_tenant
-
-        adapter_name = "#{config[:adapter]}_adapter"
+        adapter_name = "postgresql_adapter"
 
         begin
           require "apartment/adapters/#{adapter_name}"

@@ -12,6 +12,7 @@ apartment_namespace = namespace :apartment do
         puts e.message
       end
     end
+    clear_connections
   end
 
   desc "Drop all tenants"
@@ -24,6 +25,8 @@ apartment_namespace = namespace :apartment do
         puts e.message
       end
     end
+
+    clear_connections
   end
 
   desc "Migrate all tenants"
@@ -52,6 +55,7 @@ apartment_namespace = namespace :apartment do
         puts e.message
       end
     end
+    clear_connections
   end
 
   desc "Rolls the migration back to the previous version (specify steps w/ STEP=n) across all tenants."
@@ -130,5 +134,16 @@ apartment_namespace = namespace :apartment do
         Note that your tenants currently haven't been migrated. You'll need to run `db:migrate` to rectify this.
       WARNING
     end
+  end
+
+  def clear_connections
+    Apartment.connection_class.clear_all_connections!
+    Apartment.connection_class.connection_handler.tap do |ch|
+      ch.send(:owner_to_pool).each_key do |k|
+        ch.remove_connection(k) if k =~ /^_apartment/
+      end
+    end
+    Thread.current[:_apartment_connection_specification_name] = nil
+    Apartment::Tenant.reload!
   end
 end

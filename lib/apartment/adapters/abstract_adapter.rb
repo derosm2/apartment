@@ -150,6 +150,7 @@ module Apartment
 
         unless Apartment.connection_handler.retrieve_connection_pool(config[:name])
           Apartment.connection_handler.establish_connection(config)
+          Apartment.establish_connection(config)
         end
 
         Thread.current[:_apartment_connection_specification_name] = config[:name]

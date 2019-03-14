@@ -86,6 +86,17 @@ module Apartment
 
       Thread.current[:_apartment_connection_specification_name] = nil
     end
+
+    def clear_connections
+      connection_class.clear_all_connections!
+      connection_handler.tap do |ch|
+        ch.send(:owner_to_pool).each_key do |k|
+          ch.remove_connection(k) if k =~ /^_apartment/
+        end
+      end
+      Thread.current[:_apartment_connection_specification_name] = nil
+      Apartment::Tenant.reload!
+    end
   end
 
   # Exceptions

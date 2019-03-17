@@ -126,12 +126,10 @@ module Apartment
         Apartment.connection_class.connection_specification_name = nil
         Apartment.connection_class.instance_eval do
           def connection_specification_name
-            if !defined?(@connection_specification_name) || @connection_specification_name.nil?
-              apartment_spec_name = Thread.current[:_apartment_connection_specification_name]
-              return apartment_spec_name ||
-                (self == ActiveRecord::Base ? "primary" : superclass.connection_specification_name)
-            end
-            @connection_specification_name
+            return :_apartment_excluded if @connection_specification_name == :_apartment_excluded
+
+            return Thread.current[:_apartment_connection_specification_name] ||
+              (self == ActiveRecord::Base ? "primary" : superclass.connection_specification_name)
           end
         end
       end

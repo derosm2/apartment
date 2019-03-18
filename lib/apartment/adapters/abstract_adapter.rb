@@ -31,9 +31,8 @@ module Apartment
             difference = current_difference_from(config)
 
             if difference[:host] || difference[:port]
-              default_db = "postgres"
               temp_config = config.dup
-              temp_config[:database] = default_db
+              temp_config[:database] = "postgres"
               connection_switch!(temp_config)
             end
 
@@ -60,9 +59,8 @@ module Apartment
         difference = current_difference_from(config)
 
         if difference[:host] || difference[:port]
-          default_db = "postgres"
           temp_config = config.dup
-          temp_config[:database] = default_db
+          temp_config[:database] = "postgres"
           connection_switch!(temp_config)
         end
 

@@ -10,12 +10,12 @@ module Apartment
 
     ACCESSOR_METHODS = [
       :use_sql, :seed_after_create, :tenant_decorator,
-      :force_reconnect_on_switch, :pool_per_config
+      :force_reconnect_on_switch, :pool_per_config, :default_tenant
     ]
     WRITER_METHODS   = [
       :tenant_names, :database_schema_file, :excluded_models,
       :persistent_schemas, :connection_class, :tld_length, :db_migrate_tenants,
-      :seed_data_file, :default_tenant
+      :seed_data_file
     ]
     OTHER_METHODS    = [:tenant_resolver, :resolver_class]
 
@@ -59,10 +59,6 @@ module Apartment
       @excluded_models || []
     end
 
-    def default_tenant
-      @default_tenant || tenant_resolver.init_config
-    end
-
     def persistent_schemas
       @persistent_schemas || []
     end
@@ -89,6 +85,17 @@ module Apartment
       end
 
       Thread.current[:_apartment_connection_specification_name] = nil
+    end
+
+    def clear_connections
+      connection_class.clear_all_connections!
+      connection_handler.tap do |ch|
+        ch.send(:owner_to_pool).each_key do |k|
+          ch.remove_connection(k) if k =~ /^_apartment/
+        end
+      end
+      Thread.current[:_apartment_connection_specification_name] = nil
+      Apartment::Tenant.reload!
     end
   end
 

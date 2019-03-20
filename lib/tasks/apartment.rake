@@ -3,14 +3,31 @@ require 'apartment/migrator'
 apartment_namespace = namespace :apartment do
 
   desc "Create all tenants"
-  task create: 'db:migrate' do
+  task :create do
+    Apartment::Tenant.init
     tenants.each do |tenant|
       begin
-        quietly { Apartment::Tenant.create(tenant) }
+        puts("Creating #{tenant} tenant")
+        Apartment::Tenant.create(tenant)
       rescue Apartment::TenantExists => e
         puts e.message
       end
     end
+    Apartment.clear_connections
+  end
+
+  desc "Drop all tenants"
+  task :drop do
+    tenants.each do |tenant|
+      begin
+        puts("Dropping #{tenant} tenant")
+        Apartment::Tenant.drop(tenant)
+      rescue Apartment::TenantNotFound => e
+        puts e.message
+      end
+    end
+
+    Apartment.clear_connections
   end
 
   desc "Migrate all tenants"
@@ -39,6 +56,7 @@ apartment_namespace = namespace :apartment do
         puts e.message
       end
     end
+    Apartment.clear_connections
   end
 
   desc "Rolls the migration back to the previous version (specify steps w/ STEP=n) across all tenants."

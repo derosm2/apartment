@@ -30,8 +30,10 @@ module Apartment
             config = config_for(tenant)
             difference = current_difference_from(config)
 
-            if difference[:host]
-              connection_switch(config, without_keys: [:database, :schema_search_path])
+            if difference[:host] || difference[:port]
+              temp_config = config.dup
+              temp_config[:database] = "postgres"
+              connection_switch!(temp_config)
             end
 
             create_tenant!(config)
@@ -42,6 +44,8 @@ module Apartment
             seed_data if Apartment.seed_after_create
 
             yield if block_given?
+          rescue *rescuable_exceptions => exception
+            raise_create_tenant_error!(tenant, exception)
           ensure
             switch!(previous_tenant) rescue reset
           end
@@ -54,8 +58,10 @@ module Apartment
         config = config_for(tenant)
         difference = current_difference_from(config)
 
-        if difference[:host]
-          connection_switch(config, without_keys: [:database])
+        if difference[:host] || difference[:port]
+          temp_config = config.dup
+          temp_config[:database] = "postgres"
+          connection_switch!(temp_config)
         end
 
         unless database_exists?(config[:database])
@@ -65,6 +71,8 @@ module Apartment
         Apartment.connection.drop_database(config[:database])
 
         @current = tenant
+      rescue *rescuable_exceptions => exception
+        raise_drop_tenant_error!(tenant, exception)
       ensure
         switch!(previous_tenant) rescue reset
       end
@@ -116,12 +124,10 @@ module Apartment
         Apartment.connection_class.connection_specification_name = nil
         Apartment.connection_class.instance_eval do
           def connection_specification_name
-            if !defined?(@connection_specification_name) || @connection_specification_name.nil?
-              apartment_spec_name = Thread.current[:_apartment_connection_specification_name]
-              return apartment_spec_name ||
-                (self == ActiveRecord::Base ? "primary" : superclass.connection_specification_name)
-            end
-            @connection_specification_name
+            return :_apartment_excluded if @connection_specification_name == :_apartment_excluded
+
+            return Thread.current[:_apartment_connection_specification_name] ||
+              (self == ActiveRecord::Base ? "primary" : superclass.connection_specification_name)
           end
         end
       end
@@ -155,6 +161,7 @@ module Apartment
       def seed_data
         silence_warnings{ load_or_abort(Apartment.seed_data_file) } if Apartment.seed_data_file
       end
+      alias seed seed_data
 
       def load_or_abort(file)
         if File.exist?(file)
@@ -164,8 +171,24 @@ module Apartment
         end
       end
 
+      def rescuable_exceptions
+        [ActiveRecord::ActiveRecordError] + Array(rescue_from)
+      end
+
+      def rescue_from
+        []
+      end
+
       def raise_connect_error!(tenant, exception)
         raise TenantNotFound, "Error while connecting to tenant #{tenant}: #{exception.message}"
+      end
+
+      def raise_create_tenant_error!(tenant, exception)
+        raise TenantExists, "Error while creating tenant #{tenant}: #{ exception.message }"
+      end
+
+      def raise_drop_tenant_error!(tenant, exception)
+        raise TenantNotFound, "Error while dropping tenant #{tenant}: #{ exception.message }"
       end
     end
   end

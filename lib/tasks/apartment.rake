@@ -4,6 +4,7 @@ apartment_namespace = namespace :apartment do
 
   desc "Create all tenants"
   task :create do
+    Apartment::Tenant.init
     tenants.each do |tenant|
       begin
         puts("Creating #{tenant} tenant")
